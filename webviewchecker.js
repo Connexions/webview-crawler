@@ -57,12 +57,12 @@ function crawl(link) {
         }
     });
     this.then(function() {
-        this.waitForSelector('.logo', function then() {
+        this.waitForSelector('div.logo', function then() {
             console.log('Connexions logo found!');
             this.wait(500, function() {
                 this.capture('Connexions.png');
                 console.log('Screenshot Connexions!');
-                this.waitWhileSelector('.progress.progress-striped.active', function then() {
+                this.waitWhileSelector('div.progress.progress-striped.active', function then() {
                     console.log('Progressbar away');
                     this.wait(500, function() {
                         // sorry this is redundant for now with timeout... did know how to do it better for now.
@@ -71,6 +71,8 @@ function crawl(link) {
                             return checked.indexOf(url) === -1;
                         });
                         this.echo(newLinks.length + " new links found on " + link);
+                        var newImages = searchImages(this);
+                        console.log(newImages);
                     });
                 }, function timeout() {
                     console.log('Progressbar Timeout! :(');
@@ -102,6 +104,14 @@ function searchLinks() {
     return cleanLinks(this.evaluate(function _fetchInternalLinks() {
         return [].map.call(__utils__.findAll('a[href]'), function(node) {
             return node.getAttribute('href');
+        });
+    }), this.getCurrentUrl());
+}
+
+function searchImages() {
+    return cleanLinks(this.evaluate(function _fetchInternalLinks() {
+        return [].map.call(__utils__.findAll('img[src]'), function(node) {
+            return node.getAttribute('src');
         });
     }), this.getCurrentUrl());
 }
