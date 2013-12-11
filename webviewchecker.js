@@ -15,6 +15,7 @@ var casper = require("casper").create({
         loadPlugins: false
     }
 });
+var fs = require('fs');
 var checked = [];
 var currentLink = 0;
 var fs = require('fs');
@@ -22,8 +23,23 @@ var upTo = ~~casper.cli.get('max-depth') || 100;
 var url = casper.cli.get(0);
 var baseUrl = url;
 var links = [url];
+var imagelist = [];
+var scriptlist = [];
+var csslist = [];
 var utils = require('utils');
 var f = utils.format;
+
+Array.prototype.unique = function() {
+    var a = this.concat();
+    for(var i=0; i<a.length; ++i) {
+        for(var j=i+1; j<a.length; ++j) {
+            if(a[i] === a[j])
+                a.splice(j--, 1);
+        }
+    }
+
+    return a;
+};
  
 function absPath(url, base) {
     return new URI(url).resolve(new URI(base)).toString();
@@ -57,7 +73,7 @@ function crawl(link) {
         }
     });
     this.then(function() {
-        this.waitForSelector('div.logo', function then() {
+        this.waitForSelector('body', function then() {
             console.log('Connexions logo found!');
             this.wait(500, function() {
                 this.capture('Connexions.png');
@@ -72,7 +88,11 @@ function crawl(link) {
                         });
                         this.echo(newLinks.length + " new links found on " + link);
                         var newImages = searchImages.call(this);
-                        console.log(newImages);
+                        imagelist = imagelist.concat(newImages).unique();
+                        var newScript = searchScripts.call(this);
+                        scriptlist = scriptlist.concat(newScript).unique();
+                        var newCss = searchCss.call(this);
+                        csslist = csslist.concat(newCss).unique();
                     });
                 }, function timeout() {
                     console.log('Progressbar Timeout! :(');
@@ -81,7 +101,14 @@ function crawl(link) {
                     links = links.concat(newLinks).filter(function(url) {
                         return checked.indexOf(url) === -1;
                     });
-                    this.echo(newLinks.length + " new links found on " + link);                    
+                    this.echo(newLinks.length + " new links found on " + link);
+                    var newImages = searchImages.call(this);
+                    imagelist = imagelist.concat(newImages).unique();
+                    var newScript = searchScripts.call(this);
+                    scriptlist = scriptlist.concat(newScript).unique();
+                    var newCss = searchCss.call(this);
+                    csslist = csslist.concat(newCss).unique();
+                    });                
                 }, timeout=20000);
             });
         }, function timeout() { // step to execute if check has failed
@@ -89,13 +116,6 @@ function crawl(link) {
             console.log('Connexions logo Timeout! :(');
         });
     });
-    // this.then(function() {
-    //     var newLinks = searchLinks.call(this);
-    //     links = links.concat(newLinks).filter(function(url) {
-    //         return checked.indexOf(url) === -1;
-    //     });
-    //     this.echo(newLinks.length + " new links found on " + link);
-    // });
 }
  
 // Fetch all <a> elements from the page and return
@@ -116,6 +136,23 @@ function searchImages() {
         });
     }), this.getCurrentUrl());
 }
+
+function searchScripts() {
+    return cleanLinks(this.evaluate(function _fetchInternalImages() {
+        return [].map.call(__utils__.findAll('script[src]'), function(node) {
+            return node.getAttribute('src');
+        });
+    }), this.getCurrentUrl());
+}
+
+function searchCss() {
+    return cleanLinks(this.evaluate(function _fetchInternalImages() {
+        return [].map.call(__utils__.findAll('link[href]'), function(node) {
+            return node.getAttribute('href');
+        });
+    }), this.getCurrentUrl());
+}
+
  
 // As long as it has a next link, and is under the maximum limit, will keep running
 function check() {
@@ -125,6 +162,10 @@ function check() {
         this.run(check);
     } else {
         this.echo("All done, " + checked.length + " links checked.");
+        fs.write('links.txt', checked);
+        fs.write('images.txt', imagelist);
+        fs.write('css.txt', csslist);
+        fs.write('scripts.txt', scriptlist);
         this.exit();
     }
 }
