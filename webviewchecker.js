@@ -1,5 +1,5 @@
 /**
- * This casper scipt checks for 404 internal links for a given root url.
+ * This casper.js script gets all internal links, images, js, css files.
  *
  * Usage:
  *
@@ -71,7 +71,7 @@ function crawl(link) {
                             return checked.indexOf(url) === -1;
                         });
                         this.echo(newLinks.length + " new links found on " + link);
-                        var newImages = searchImages(this);
+                        var newImages = searchImages.call(this);
                         console.log(newImages);
                     });
                 }, function timeout() {
@@ -108,8 +108,9 @@ function searchLinks() {
     }), this.getCurrentUrl());
 }
 
+// Get all <img> with a src
 function searchImages() {
-    return cleanLinks(this.evaluate(function _fetchInternalLinks() {
+    return cleanLinks(this.evaluate(function _fetchInternalImages() {
         return [].map.call(__utils__.findAll('img[src]'), function(node) {
             return node.getAttribute('src');
         });
