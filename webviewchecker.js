@@ -73,7 +73,7 @@ function crawl(link) {
         }
     });
     this.then(function() {
-        this.waitForSelector('body', function then() {
+        this.waitForSelector('div.logo', function then() {
             console.log('Connexions logo found!');
             this.wait(500, function() {
                 this.capture('Connexions.png');
@@ -107,8 +107,7 @@ function crawl(link) {
                     var newScript = searchScripts.call(this);
                     scriptlist = scriptlist.concat(newScript).unique();
                     var newCss = searchCss.call(this);
-                    csslist = csslist.concat(newCss).unique();
-                    });                
+                    csslist = csslist.concat(newCss).unique();               
                 }, timeout=20000);
             });
         }, function timeout() { // step to execute if check has failed
